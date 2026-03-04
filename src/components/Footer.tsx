@@ -6,8 +6,30 @@ import {
   Send
 } from 'lucide-react';
 import { Button } from './ui/button';
+import { useBlocks } from '../contexts/BlocksContext';
 
 export function Footer() {
+  const { getBlock, loading } = useBlocks();
+  const footerBlock = getBlock('footer');
+  
+  // Если блок скрыт - не рендерим компонент
+  if (footerBlock?.is_visible === false) {
+    return null;
+  }
+
+  // Фильтруем только видимые элементы
+  const items = (footerBlock?.items || []).filter((item: any) => item.is_visible !== false);
+  
+  // Контакты (элементы из админки или значения по умолчанию)
+  const contactInfo = items.length > 0 ? items : [
+    { title: 'Телефон', value: '+7 (952) 688-22-88', icon: 'phone' },
+    { title: 'Email', value: 'info@mashinka.ru', icon: 'email' },
+    { title: 'Адрес', value: 'г. Екатеринбург, ул. Первомайская, стр. 77', icon: 'address' }
+  ];
+
+  const privacyLink = footerBlock?.privacy_link || '/privacy';
+  const termsLink = footerBlock?.terms_link || '/terms';
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     element?.scrollIntoView({ behavior: 'smooth' });
@@ -17,10 +39,21 @@ export function Footer() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const getIcon = (title: string) => {
+    const lowerTitle = title?.toLowerCase() || '';
+    if (lowerTitle.includes('телефон')) return Phone;
+    if (lowerTitle.includes('email') || lowerTitle.includes('почта')) return Mail;
+    if (lowerTitle.includes('адрес')) return MapPin;
+    return Phone;
+  };
+
+  // Юридическая информация из поля content
+  const legalInfo = footerBlock?.content || '';
+
   return (
-    <footer className="bg-primary text-primary-foreground">
+    <footer className="bg-primary text-primary-foreground accessibility-high-contrast-exclude accessibility-inverted-exclude accessibility-blue-exclude">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-3 gap-8">
           {/* Logo and Description */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
@@ -28,7 +61,6 @@ export function Footer() {
               <span className="text-xl font-bold"></span>
             </div>
             <p className="text-primary-foreground/80 text-sm leading-relaxed">
-              Мы не просто автошкола. 
               Мы — Академия будущих водителей!
             </p>
             <div className="flex space-x-3">
@@ -77,7 +109,7 @@ export function Footer() {
                 onClick={() => scrollToSection('documents')}
                 className="block text-sm text-primary-foreground/80 hover:text-accent transition-colors"
               >
-                Документы
+                Cведения об образовательной организации
               </button>
               <button 
                 onClick={() => scrollToSection('contact')}
@@ -88,41 +120,19 @@ export function Footer() {
             </nav>
           </div>
 
-          {/* Courses */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-accent">Общество с ограниченной ответственностью «Автошкола Машинка»</h3>
-            <div className="space-y-2">
-              <div className="text-sm text-primary-foreground/80">
-                ИНН 7203562551
-              </div>
-              <div className="text-sm text-primary-foreground/80">
-                ОГРН 1237200016130
-              </div>
-              <div className="text-sm text-primary-foreground/80">
-                Категория A - Мотоциклы
-              </div>
-              <div className="text-sm text-primary-foreground/80">
-                Повышение квалификации
-              </div>
-            </div>
-          </div>
-
           {/* Contact Info */}
           <div className="space-y-4">
             <h3 className="font-semibold text-accent">Контакты</h3>
             <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-accent" />
-                <span className="text-sm">+7 (952) 688-22-88</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-accent" />
-                <span className="text-sm">info@mashinka.ru</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-accent" />
-                <span className="text-sm">г. Екатеринбург, ул. Первомайская, д. 77</span>
-              </div>
+              {contactInfo.map((item, index) => {
+                const IconComponent = getIcon(item.title);
+                return (
+                  <div key={index} className="flex items-center space-x-2">
+                    <IconComponent className="w-4 h-4 text-accent" />
+                    <span className="text-sm">{item.value}</span>
+                  </div>
+                );
+              })}
             </div>
             
             <div className="pt-2">
@@ -141,15 +151,15 @@ export function Footer() {
         <div className="border-t border-primary-foreground/20 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-primary-foreground/60">
-              © 2025 Автошкола "Машинка". Все права защищены.
+              {footerBlock?.subtitle || '© 2025 Автошкола "Машинка". Все права защищены.'}
             </div>
             <div className="flex space-x-6 text-sm">
-              <button className="text-primary-foreground/60 hover:text-accent transition-colors">
+              <a href={privacyLink} className="text-primary-foreground/60 hover:text-accent transition-colors">
                 Политика конфиденциальности
-              </button>
-              <button className="text-primary-foreground/60 hover:text-accent transition-colors">
+              </a>
+              <a href={termsLink} className="text-primary-foreground/60 hover:text-accent transition-colors">
                 Пользовательское соглашение
-              </button>
+              </a>
               <button 
                 onClick={scrollToTop}
                 className="text-primary-foreground/60 hover:text-accent transition-colors"

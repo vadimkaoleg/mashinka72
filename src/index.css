@@ -5174,3 +5174,283 @@ html {
     opacity: 0;
   }
 }
+
+/* Стили для версии для слабовидящих */
+.accessibility-enabled {
+  scroll-behavior: smooth;
+}
+
+/* Убедитесь, что все текстовые элементы наследуют размер шрифта */
+.accessibility-enabled * {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Особые случаи для компонентов, которые могут иметь фиксированные стили */
+.accessibility-enabled .text-sm { font-size: inherit !important; }
+.accessibility-enabled .text-base { font-size: inherit !important; }
+.accessibility-enabled .text-lg { font-size: inherit !important; }
+.accessibility-enabled .text-xl { font-size: inherit !important; }
+.accessibility-enabled .text-2xl { font-size: inherit !important; }
+.accessibility-enabled .text-3xl { font-size: inherit !important; }
+.accessibility-enabled .text-4xl { font-size: inherit !important; }
+
+/* Улучшение контраста для изображений в режимах высокой контрастности */
+.accessibility-enabled img {
+  filter: contrast(1.1) brightness(1.1);
+}
+
+/* Убедитесь, что изображения всегда видны, когда включены */
+.accessibility-enabled img:not([alt]) {
+  border: 2px dashed #ff0000 !important;
+}
+
+/* Улучшение читаемости для всех режимов */
+.accessibility-enabled {
+  text-shadow: 0 0 1px rgba(0,0,0,0.1);
+}
+
+/* Анимации для плавного перехода */
+.accessibility-enabled * {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Скрытие декоративных элементов в версии для слабовидящих */
+.accessibility-enabled .decorative {
+  display: none !important;
+}
+
+/* Базовые стили для панели доступности */
+.accessibility-panel {
+  font-family: Arial, sans-serif !important;
+  background: #FFFFFF !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+/* Убедитесь, что все элементы внутри панели наследуют цвет */
+.accessibility-panel * {
+  color: inherit !important;
+  background: transparent !important;
+}
+
+/* Улучшение контраста для текста в футере и хедере */
+.accessibility-enabled footer,
+.accessibility-enabled header {
+  background: inherit !important;
+  color: inherit !important;
+}
+
+.accessibility-enabled footer *,
+.accessibility-enabled header * {
+  color: inherit !important;
+}
+
+/* Убедитесь, что кнопки видны во всех режимах */
+.accessibility-enabled button {
+  border-color: currentColor !important;
+}
+
+.accessibility-enabled button:hover {
+  opacity: 0.8 !important;
+}
+
+/* Улучшение читаемости для всех режимов */
+.accessibility-enabled {
+  text-shadow: 0 0 1px rgba(0,0,0,0.1);
+}
+
+/* Анимации для плавного перехода */
+.accessibility-enabled * {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease !important;
+}
+
+/* Высокая контрастность для панели */
+.accessibility-enabled .accessibility-panel {
+  background: #FFFFFF !important;
+  color: #000000 !important;
+  border: 3px solid #000000 !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Усиление контраста для текста в панели */
+.accessibility-enabled .accessibility-panel * {
+  color: #000000 !important;
+}
+
+.accessibility-enabled .accessibility-panel button {
+  border-color: #000000 !important;
+}
+
+.accessibility-enabled .accessibility-panel button:hover {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* Особые стили для футера в режиме доступности */
+.accessibility-enabled footer {
+  background: var(--background) !important;
+}
+
+.accessibility-enabled footer.bg-primary {
+  background: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+.accessibility-enabled footer [class*="text-primary-foreground"] {
+  color: #000000 !important;
+  opacity: 1 !important;
+  font-weight: 600;
+}
+
+.accessibility-enabled footer .bg-primary {
+  background: #FFFFFF !important;
+}
+
+.accessibility-enabled footer [class*="border-primary-foreground"] {
+  border-color: #000000 !important;
+  opacity: 0.5 !important;
+}
+.accessibility-enabled footer .text-accent {
+  color: #0000FF !important;
+  font-weight: bold;
+}
+
+/* Убедимся, что кнопки в футере хорошо видны */
+.accessibility-enabled footer button {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+}
+
+.accessibility-enabled footer button:hover {
+  background: #333333 !important;
+}
+
+/* Специальные классы для доступности */
+.accessibility-panel {
+  font-family: Arial, sans-serif !important;
+}
+
+/* Убедитесь, что панель всегда поверх других элементов */
+.accessibility-panel {
+  z-index: 10000 !important;
+}
+
+/* Сброс стилей для кнопок в режиме доступности */
+body.accessibility-enabled button {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+/* Улучшение видимости текста */
+body.accessibility-enabled {
+  font-weight: 500 !important;
+}
+
+/* Особые стили для быстрых ссылок в футере */
+body.accessibility-enabled footer button {
+  background: transparent !important;
+  color: inherit !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Убедитесь, что текст виден в любом режиме */
+body.accessibility-enabled .text-primary-foreground {
+  color: inherit !important;
+}
+
+/* ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ КОНТРАСТНОГО РЕЖИМА */
+body.accessibility-enabled footer.bg-primary {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* УБЕДИТЕСЬ, ЧТО ФОН ФУТЕРА ИЗМЕНЯЕТСЯ В КОНТРАСТНОМ РЕЖИМЕ */
+body.accessibility-enabled[data-contrast="high"] footer,
+body.accessibility-enabled .contrast-high footer {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* ПРИНУДИТЕЛЬНОЕ ИЗМЕНЕНИЕ ФОНА ФУТЕРА */
+body.accessibility-enabled footer {
+  background-color: inherit !important;
+}
+
+/* УЛУЧШЕНИЕ ВИДИМОСТИ ТЕКСТА В ФУТЕРЕ */
+body.accessibility-enabled footer * {
+  color: inherit !important;
+}
+
+/* ОСОБЫЕ СТИЛИ ДЛЯ БЫСТРЫХ ССЫЛОК В ФУТЕРЕ */
+body.accessibility-enabled footer nav button {
+  background: transparent !important;
+  color: inherit !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  text-decoration: underline !important;
+}
+
+/* УБЕДИТЕСЬ, ЧТО КНОПКИ В ПАНЕЛИ ВИДНЫ */
+.accessibility-panel button {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+}
+
+.accessibility-panel button:hover {
+  background: #333333 !important;
+  border-color: #333333 !important;
+}
+
+/* ОСОБЫЕ СЛУЧАИ ДЛЯ ФУТЕРА */
+body.accessibility-enabled footer .text-primary-foreground,
+body.accessibility-enabled footer [class*="text-primary-foreground/"],
+body.accessibility-enabled footer .text-muted-foreground {
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+
+/* Гарантированные стили для панели доступности */
+.accessibility-panel {
+  background: #FFFFFF !important;
+  color: #000000 !important;
+  border: 3px solid #000000 !important;
+  z-index: 10000 !important;
+  font-family: Arial, sans-serif !important;
+}
+
+.accessibility-panel * {
+  color: #000000 !important;
+  background: transparent !important;
+}
+
+/* Кнопки в панели - всегда контрастные */
+.accessibility-panel button {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+}
+
+.accessibility-panel button:hover {
+  background: #333333 !important;
+  border-color: #333333 !important;
+}
+
+/* Исключение для панели в контрастном режиме */
+body.accessibility-enabled .accessibility-panel,
+body.accessibility-enabled .accessibility-panel * {
+  background: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+body.accessibility-enabled .accessibility-panel button {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #000000 !important;
+}
