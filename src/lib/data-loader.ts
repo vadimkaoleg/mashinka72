@@ -76,7 +76,8 @@ const CACHE_KEY = 'site-data-cache';
 const CACHE_TIMESTAMP_KEY = 'site-data-timestamp';
 
 // Время актуальности кэша (в миллисекундах)
-const CACHE_VALID_TIME = 5 * 60 * 1000; // 5 минут
+// Увеличено до 24 часов - данные сохраняются надолго
+const CACHE_VALID_TIME = 24 * 60 * 60 * 1000; // 24 часа
 
 /**
  * Получить данные из локального кэша
@@ -154,7 +155,7 @@ async function fetchFromFTP(): Promise<SiteData | null> {
 
 /**
  * Основная функция загрузки данных
- * Стратегия (изменено: FTP как основной источник):
+ * Стратегия (FTP как основной источник):
  * 1. Пробуем FTP (webnames) - основной источник
  * 2. Если недоступен - пробуем API сервера
  * 3. Если недоступен - используем кэш
@@ -195,10 +196,26 @@ export function getBlocksFromData(data: SiteData | null): Block[] {
 
 /**
  * Получить документы из загруженных данных
+ * С дополнительной очисткой от дубликатов по filename
  */
 export function getDocumentsFromData(data: SiteData | null): DocumentType[] {
   if (!data || !data.documents) return [];
-  return data.documents.filter(doc => doc.is_visible);
+  
+  // Очищаем от дубликатов по filename (оставляем первый)
+  const seen = new Set<string>();
+  const uniqueDocs: DocumentType[] = [];
+  
+  for (const doc of data.documents) {
+    if (!seen.has(doc.filename)) {
+      seen.add(doc.filename);
+      // Приводим is_visible к boolean (может прийти как число 1/0)
+      const isVisible = doc.is_visible === true || doc.is_visible === 1 || doc.is_visible === '1';
+      uniqueDocs.push({ ...doc, is_visible: isVisible });
+    }
+  }
+  
+  // Фильтруем только видимые документы
+  return uniqueDocs.filter(doc => doc.is_visible === true || doc.is_visible === 1);
 }
 
 /**
@@ -206,7 +223,17 @@ export function getDocumentsFromData(data: SiteData | null): DocumentType[] {
  */
 export function getSectionsFromData(data: SiteData | null): SectionType[] {
   if (!data || !data.sections) return [];
-  return data.sections.filter(section => section.is_visible);
+  // Приводим is_visible к boolean (может прийти как число 1/0)
+  return data.sections
+    .map(section => ({
+      ...section,
+      is_visible: section.is_visible === true || section.is_visible === 1 || section.is_visible === '1',
+      subsections: section.subsections?.map(sub => ({
+        ...sub,
+        is_visible: sub.is_visible === true || sub.is_visible === 1 || sub.is_visible === '1'
+      })) || []
+    }))
+    .filter(section => section.is_visible);
 }
 
 /**

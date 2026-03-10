@@ -46,7 +46,7 @@ export function About() {
               <div className="w-20 h-1 bg-accent"></div>
             </div>
             
-            <p className="text-lg leading-relaxed text-foreground">
+            <p className="text-lg leading-relaxed text-foreground whitespace-pre-wrap">
               {aboutBlock?.content || 'Мы гордимся высоким качеством обучения и профессионализмом наших инструкторов.'}
             </p>
             

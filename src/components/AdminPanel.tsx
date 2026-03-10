@@ -54,7 +54,8 @@ import {
   CheckSquare,
   Square,
   GripVertical,
-  Folder
+  Folder,
+  RefreshCw
 } from 'lucide-react';
 import { API_CONFIG } from '../config/api';
 
@@ -162,12 +163,51 @@ export function AdminPanel() {
   const [isDragging, setIsDragging] = useState(false);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  // Редактирование названия документа
+// Редактирование названия документа
   const [editingDocId, setEditingDocId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   
   const [formData, setFormData] = useState<Partial<Block>>({});
   const [itemsData, setItemsData] = useState<BlockItem[]>([]);
+
+  // Синхронизация с FTP
+  const [syncingFtp, setSyncingFtp] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  const syncWithFtp = async () => {
+    setSyncingFtp(true);
+    setSyncMessage(null);
+    
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${API_CONFIG.baseUrl}/admin/sync-ftp`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        if (data.synced) {
+          setSyncMessage({ type: 'success', text: `Данные обновлены с FTP! Документов: ${data.stats?.documents || 0}` });
+          // Перезагружаем данные после синхронизации
+          fetchDocuments();
+          fetchBlocks();
+        } else {
+          setSyncMessage({ type: 'success', text: data.message || 'Нет новых данных на FTP' });
+        }
+      } else {
+        setSyncMessage({ type: 'error', text: data.message || 'Ошибка синхронизации' });
+      }
+    } catch (err) {
+      console.error('Ошибка синхронизации с FTP:', err);
+      setSyncMessage({ type: 'error', text: 'Ошибка соединения с сервером' });
+    } finally {
+      setSyncingFtp(false);
+      // Скрываем сообщение через 5 секунд
+      setTimeout(() => setSyncMessage(null), 5000);
+    }
+  };
 
   // Проверка токена при загрузке
   useEffect(() => {
@@ -176,6 +216,7 @@ export function AdminPanel() {
       setIsAuthenticated(true);
       fetchBlocks();
       fetchDocuments();
+      fetchSections();
     }
   }, []);
 
@@ -214,13 +255,20 @@ export function AdminPanel() {
       const token = localStorage.getItem('admin_token');
       if (!token) return;
       
+      // Сбрасываем документы перед загрузкой
+      setDocuments([]);
+      
       const response = await fetch(`${API_CONFIG.baseUrl}/admin/documents`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (response.ok) {
         const data = await response.json();
-        setDocuments(data);
+        // Убираем дубликаты по id
+        const uniqueData = data.filter((doc: Document, index: number, self: Document[]) => 
+          index === self.findIndex((d: Document) => d.id === doc.id)
+        );
+        setDocuments(uniqueData);
       }
     } catch (err) {
       console.error('Ошибка загрузки документов:', err);
@@ -479,7 +527,17 @@ export function AdminPanel() {
       });
       
       if (response.ok) {
-        fetchDocuments();
+        // Не вызываем fetchDocuments сразу - используем данные из ответа
+        const data = await response.json();
+        if (data) {
+          setDocuments(prev => {
+            const newDoc = Array.isArray(data) ? data[0] : data;
+            if (newDoc && newDoc.id) {
+              return [...prev, newDoc];
+            }
+            return prev;
+          });
+        }
       }
     } catch (err) {
       console.error('Ошибка загрузки документа:', err);
@@ -579,19 +637,6 @@ export function AdminPanel() {
     }
   };
 
-  // Фильтрация документов
-  const filteredDocuments = documents.filter(doc => {
-    // Поиск по названию
-    if (docSearchQuery && !doc.title.toLowerCase().includes(docSearchQuery.toLowerCase()) &&
-        !doc.original_name.toLowerCase().includes(docSearchQuery.toLowerCase())) {
-      return false;
-    }
-    // Фильтр по статусу
-    if (docStatusFilter === 'visible' && !doc.is_visible) return false;
-    if (docStatusFilter === 'hidden' && doc.is_visible) return false;
-    return true;
-  });
-
   // Toggle выбора документа
   const toggleDocSelection = (id: number) => {
     setSelectedDocs(prev =>
@@ -612,6 +657,8 @@ export function AdminPanel() {
   const deleteSelectedDocs = async () => {
     if (selectedDocs.length === 0) return;
 
+    if (!confirm(`Удалить ${selectedDocs.length} выбранных документов?`)) return;
+
     try {
       const token = localStorage.getItem('admin_token');
       await Promise.all(
@@ -628,6 +675,19 @@ export function AdminPanel() {
       console.error('Ошибка массового удаления:', err);
     }
   };
+
+  // Фильтрация документов
+  const filteredDocuments = documents.filter(doc => {
+    // Поиск по названию
+    if (docSearchQuery && !doc.title.toLowerCase().includes(docSearchQuery.toLowerCase()) &&
+        !doc.original_name.toLowerCase().includes(docSearchQuery.toLowerCase())) {
+      return false;
+    }
+    // Фильтр по статусу
+    if (docStatusFilter === 'visible' && !doc.is_visible) return false;
+    if (docStatusFilter === 'hidden' && doc.is_visible) return false;
+    return true;
+  });
 
   // Drag and drop обработчики
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -668,7 +728,6 @@ export function AdminPanel() {
       }
     }
 
-    fetchDocuments();
     setUploading(false);
   }, []);
 
@@ -853,7 +912,7 @@ export function AdminPanel() {
             Блоки
           </button>
           <button
-            onClick={() => setActiveTab('documents')}
+            onClick={() => { setActiveTab('documents'); fetchSections(); }}
             className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'documents'
                 ? 'border-accent text-accent' 
@@ -988,17 +1047,25 @@ export function AdminPanel() {
                   <Button
                     variant="outline"
                     className="h-auto py-4 flex flex-col items-center gap-2"
-                    onClick={() => {
-                      fetchBlocks();
-                      fetchDocuments();
-                    }}
+                    onClick={syncWithFtp}
+                    disabled={syncingFtp}
                   >
-                    <Loader2 className="w-6 h-6" />
-                    <span className="text-sm">Обновить данные</span>
+                    {syncingFtp ? <Loader2 className="w-6 h-6 animate-spin" /> : <RefreshCw className="w-6 h-6" />}
+                    <span className="text-sm">{syncingFtp ? 'Синхронизация...' : 'Синхр. с FTP'}</span>
                   </Button>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Сообщение о синхронизации */}
+            {syncMessage && (
+              <div className={`flex items-center gap-2 p-4 rounded-lg ${
+                syncMessage.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
+              }`}>
+                {syncMessage.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                <span>{syncMessage.text}</span>
+              </div>
+            )}
 
             {/* Последние документы */}
             <Card>
@@ -1321,123 +1388,133 @@ export function AdminPanel() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b bg-slate-50">
-                          <th className="text-left py-3 px-4 font-medium w-12">
+                          <th className="text-left py-3 px-2 font-medium w-10">
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0"
+                              className="h-7 w-7 p-0"
                               onClick={selectAllDocs}
                             >
                               {selectedDocs.length === filteredDocuments.length ? (
-                                <CheckSquare className="w-4 h-4" />
+                                <CheckSquare className="w-3 h-3" />
                               ) : (
-                                <Square className="w-4 h-4" />
+                                <Square className="w-3 h-3" />
                               )}
                             </Button>
                           </th>
-                          <th className="text-left py-3 px-4 font-medium w-16">№</th>
-                          <th className="text-left py-3 px-4 font-medium">Название</th>
-                          <th className="text-left py-3 px-4 font-medium">Файл</th>
-                          <th className="text-left py-3 px-4 font-medium">Размер</th>
-                          <th className="text-left py-3 px-4 font-medium">Статус</th>
-                          <th className="text-right py-3 px-4 font-medium">Действия</th>
+                          <th className="text-left py-2 px-2 font-medium text-sm">Название</th>
+                          <th className="text-left py-2 px-2 font-medium text-sm">Файл</th>
+                          <th className="text-left py-2 px-2 font-medium text-sm">Размер</th>
+                          <th className="text-left py-2 px-2 font-medium text-sm">Статус</th>
+                          <th className="text-left py-2 px-2 font-medium text-sm">Раздел</th>
+                          <th className="text-right py-2 px-2 font-medium text-sm">Действ.</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredDocuments.map((doc, index) => (
                           <tr key={doc.id} className={`border-b hover:bg-slate-50 ${selectedDocs.includes(doc.id) ? 'bg-blue-50' : ''}`}>
-                            <td className="py-3 px-4">
+                            <td className="py-3 px-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0"
+                                className="h-7 w-7 p-0"
                                 onClick={() => toggleDocSelection(doc.id)}
                               >
                                 {selectedDocs.includes(doc.id) ? (
-                                  <CheckSquare className="w-4 h-4 text-blue-600" />
+                                  <CheckSquare className="w-3 h-3 text-blue-600" />
                                 ) : (
-                                  <Square className="w-4 h-4" />
+                                  <Square className="w-3 h-3" />
                                 )}
                               </Button>
                             </td>
-                            <td className="py-3 px-4">
-                              <div className="flex flex-col gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => moveDocument(index, index - 1)}
-                                  disabled={index === 0}
-                                  title="Переместить вверх"
-                                >
-                                  <ChevronUp className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => moveDocument(index, index + 1)}
-                                  disabled={index === filteredDocuments.length - 1}
-                                  title="Переместить вниз"
-                                >
-                                  <ChevronDown className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
+                            <td className="py-3 px-2">
                               {editingDocId === doc.id ? (
-                                <div className="flex gap-2">
+                                <div className="flex gap-1">
                                   <Input
                                     value={editingTitle}
                                     onChange={(e) => setEditingTitle(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && saveDocumentTitle(doc.id)}
-                                    className="h-8"
+                                    className="h-7 text-sm"
                                     autoFocus
                                   />
-                                  <Button size="sm" onClick={() => saveDocumentTitle(doc.id)}>
-                                    <Check className="w-4 h-4" />
+                                  <Button size="sm" className="h-7 px-2" onClick={() => saveDocumentTitle(doc.id)}>
+                                    <Check className="w-3 h-3" />
                                   </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => setEditingDocId(null)}>
-                                    <X className="w-4 h-4" />
+                                  <Button size="sm" variant="ghost" className="h-7 px-1" onClick={() => setEditingDocId(null)}>
+                                    <X className="w-3 h-3" />
                                   </Button>
                                 </div>
                               ) : (
                                 <div
-                                  className="font-medium cursor-pointer hover:text-blue-600 flex items-center gap-2"
+                                  className="font-medium cursor-pointer hover:text-blue-600 flex items-center gap-1 text-sm"
                                   onClick={() => startEditTitle(doc)}
                                 >
                                   {doc.title}
                                   <Edit3 className="w-3 h-3 text-muted-foreground" />
                                 </div>
                               )}
-                              {doc.description && <div className="text-sm text-muted-foreground truncate max-w-xs">{doc.description}</div>}
                             </td>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-sm">{doc.original_name}</span>
+                            <td className="py-3 px-2">
+                              <div className="flex items-center gap-1">
+                                <FileText className="w-3 h-3 text-muted-foreground" />
+                                <span className="text-xs truncate max-w-[100px]">{doc.original_name}</span>
                               </div>
                             </td>
-                            <td className="py-3 px-4 text-sm text-muted-foreground">
-                              {doc.file_size ? (doc.file_size / 1024).toFixed(1) + ' КБ' : '-'}
+                            <td className="py-3 px-2 text-xs text-muted-foreground">
+                              {doc.file_size ? (doc.file_size / 1024).toFixed(0) + ' КБ' : '-'}
                             </td>
-                            <td className="py-3 px-4">
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${doc.is_visible ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            <td className="py-3 px-2">
+                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${doc.is_visible ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                 {doc.is_visible ? 'Виден' : 'Скрыт'}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-right">
-                              <div className="flex items-center justify-end gap-1">
+                            <td className="py-3 px-2">
+                              <select
+                                value={doc.section_id || ''}
+                                onChange={async (e) => {
+                                  const newSectionId = e.target.value ? parseInt(e.target.value) : null;
+                                  try {
+                                    const adminToken = localStorage.getItem('admin_token');
+                                    const response = await fetch(`${API_CONFIG.baseUrl}/admin/documents/${doc.id}`, {
+                                      method: 'PUT',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${adminToken}`
+                                      },
+                                      body: JSON.stringify({ section_id: newSectionId })
+                                    });
+                                    if (response.ok) {
+                                      // Обновляем локальное состояние
+                                      setDocuments(docs => docs.map(d => 
+                                        d.id === doc.id ? { ...d, section_id: newSectionId } : d
+                                      ));
+                                    }
+                                  } catch (err) {
+                                    console.error('Ошибка изменения раздела:', err);
+                                  }
+                                }}
+                                className="text-xs border rounded px-1 py-0.5 bg-white w-24"
+                              >
+                                <option value="">— Без раздела —</option>
+                                {sections.map(section => (
+                                  <option key={section.id} value={section.id}>
+                                    {section.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="py-3 px-2 text-right">
+                              <div className="flex items-center justify-end gap-0.5">
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  className="h-7 w-7 p-0"
                                   onClick={() => toggleDocumentVisibility(doc)}
-                                  title={doc.is_visible ? 'Скрыть документ' : 'Показать документ'}
-                                  className={doc.is_visible ? 'text-orange-500 hover:text-orange-700' : 'text-green-500 hover:text-green-700'}
+                                  title={doc.is_visible ? 'Скрыть' : 'Показать'}
                                 >
-                                  {doc.is_visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                  {doc.is_visible ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={async () => {
+                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={async () => {
                                   try {
                                     const response = await fetch(`${API_CONFIG.baseUrl}/download/${doc.filename}`);
                                     if (!response.ok) throw new Error('Ошибка загрузки');
@@ -1455,10 +1532,10 @@ export function AdminPanel() {
                                     window.open(`${API_CONFIG.baseUrl}/download/${doc.filename}`, '_blank');
                                   }
                                 }}>
-                                  <Download className="w-4 h-4" />
+                                  <Download className="w-3 h-3" />
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => confirmDelete(doc)} className="text-red-500 hover:text-red-700">
-                                  <Trash2 className="w-4 h-4" />
+                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500 hover:text-red-700" onClick={() => confirmDelete(doc)}>
+                                  <Trash2 className="w-3 h-3" />
                                 </Button>
                               </div>
                             </td>

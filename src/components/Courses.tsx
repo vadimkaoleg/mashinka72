@@ -60,7 +60,7 @@ export function Courses() {
             {coursesBlock?.title || 'Наши курсы обучения'}
           </h2>
           <div className="w-20 h-1 bg-accent mx-auto"></div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto whitespace-pre-wrap">
             {coursesBlock?.content || 'Выберите подходящую категорию и начните обучение'}
           </p>
         </div>
@@ -109,7 +109,7 @@ export function Courses() {
                         {course.features.map((feature, index) => (
                           <li key={index} className="flex items-start space-x-2 text-sm">
                             <CheckCircle className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                            <span>{feature}</span>
+                            <span className="whitespace-pre-wrap">{feature}</span>
                           </li>
                         ))}
                       </ul>

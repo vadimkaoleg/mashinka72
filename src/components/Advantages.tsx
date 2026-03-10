@@ -53,7 +53,7 @@ export function Advantages() {
             {advantagesBlock?.title || 'Почему выбирают нас'}
           </h2>
           <div className="w-20 h-1 bg-accent mx-auto"></div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto whitespace-pre-wrap">
             {advantagesBlock?.content || 'Мы предоставляем лучшие условия для качественного обучения вождению'}
           </p>
         </div>
@@ -76,7 +76,7 @@ export function Advantages() {
                     {advantage.title}
                   </h3>
                   
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                     {advantage.description}
                   </p>
                 </div>

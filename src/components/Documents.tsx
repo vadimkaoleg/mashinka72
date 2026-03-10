@@ -308,7 +308,7 @@ export function Documents() {
               {doc.description && (
                 <div>
                   <h4 className="text-sm font-medium text-slate-700 mb-1">Описание:</h4>
-                  <p className="text-sm text-slate-600">{doc.description}</p>
+                  <p className="text-sm text-slate-600 whitespace-pre-wrap">{doc.description}</p>
                 </div>
               )}
               
@@ -365,8 +365,7 @@ export function Documents() {
   // Данные из блока documents
   const title = documentsBlock?.title || 'Сведения об образовательной организации';
   const description = documentsBlock?.content || '';
-  const legalInfo = documentsBlock?.legal_info || '';
-
+  
   return (
     <section id="documents" className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -376,23 +375,11 @@ export function Documents() {
           </h2>
           <div className="w-20 h-1 bg-accent mx-auto"></div>
           {description && (
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto whitespace-pre-wrap">
               {description}
             </p>
           )}
         </div>
-
-        {/* Юридическая информация */}
-        {legalInfo && (
-          <div className="mb-8 p-4 bg-white rounded-lg border shadow-sm">
-            <div 
-              className="prose prose-sm max-w-none text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: legalInfo }}
-            />
-          </div>
-        )}
-
-
 
         <Card>
           <CardHeader>

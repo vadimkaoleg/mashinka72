@@ -39,7 +39,7 @@ export function Hero() {
               <span className="text-accent block">{heroBlock?.subtitle || 'Мы — Академия будущих водителей!'}</span>
             </h1>
             
-            <p className="text-lg md:text-xl opacity-90 leading-relaxed">
+            <p className="text-lg md:text-xl opacity-90 leading-relaxed whitespace-pre-wrap">
               {heroBlock?.content || 'Автошкола "Машинка" предлагает качественное обучение вождению с опытными инструкторами.'}
             </p>
             

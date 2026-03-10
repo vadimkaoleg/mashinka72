@@ -187,7 +187,7 @@ export function Contact() {
             {contactBlock?.title || 'Связаться с нами'}
           </h2>
           <div className="w-20 h-1 bg-accent mx-auto"></div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto whitespace-pre-wrap">
             {contactBlock?.content || 'Остались вопросы? Свяжитесь с нами любым удобным способом'}
           </p>
         </div>
